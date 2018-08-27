@@ -66,16 +66,16 @@ void graph_tv(
         no = nodes[i] = G->add_node();
         G->set_tweights(no, flow_from_source[i], flow_to_sink[i]);
     }
-    printf("node flow: %f\n", G->flow);
     
     // Initialize edges
     for (int i = 0; i < num_edges; i++) {
         G->add_edge(nodes[edge_src[i]], nodes[edge_trg[i]], dr, 0.0);
     }
-    printf("edge flow: %f\n", G->flow);
     
-    // // Run dyadicparametricTV
-    // // G->dyadicparametricTV(error);
+    // Run dyadicparametricTV
+    // G->dyadicparametricTV(error);
+    
+    // Run maxflow
     double x = G->maxflow();
     cout << "flow=" << x << endl;
     
@@ -86,6 +86,7 @@ void graph_tv(
     
     delete G;
     free(nodes);
+    
 }
 
 int main(){
