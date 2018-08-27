@@ -61,15 +61,19 @@ void minCut(double graph[V][V], int s, int t) {
     // given capacities in the original graph as residual capacities
     // in residual graph
     double rGraph[V][V];  // rGraph[i][j] indicates residual capacity of edge i-j
-    for (u = 0; u < V; u++)
-        for (v = 0; v < V; v++)
+    for (u = 0; u < V; u++) {
+        for (v = 0; v < V; v++) {
              rGraph[u][v] = graph[u][v];
+        }
+    }
 
     int parent[V];  // This array is filled by BFS and to store path
 
     // Augment the flow while there is a path from source to sink
+    int counter = 0;
     while (bfs(rGraph, s, t, parent)) {
-        // Find minimum residual capacity of the edhes along the
+        
+        // Find minimum residual capacity of the edges along the
         // path filled by BFS. Or we can say find the maximum flow
         // through the path found.
         double path_flow = INT_MAX;
@@ -80,20 +84,24 @@ void minCut(double graph[V][V], int s, int t) {
 
         // update residual capacities of the edges and reverse edges
         // along the path
-        for (v=t; v != s; v=parent[v]) {
+        printf("residual\n");
+        for (v = t; v != s; v = parent[v]) {
             u = parent[v];
+            printf("%d -> %d\n", u, v);
             rGraph[u][v] -= path_flow;
             rGraph[v][u] += path_flow;
         }
 
-        printf("residual graph printout\n");
+        printf("residual graph printout (%d) \n", counter);
         for (u = 0; u < V; u++) {
             for (v = 0; v < V; v++) {
-                 printf("%5.2f ", graph[u][v]);
+                 printf("%5.2f ", rGraph[u][v]);
             }
             printf("\n");
         }
         printf("\n");
+        
+        counter++;
     }
 
     // Flow is maximum now, find vertices reachable from s
@@ -103,10 +111,11 @@ void minCut(double graph[V][V], int s, int t) {
 
     // Print all edges that are from a reachable vertex to
     // non-reachable vertex in the original graph
+    printf("Cut:\n");
     for (int i = 0; i < V; i++) {
         for (int j = 0; j < V; j++) {
             if (visited[i] && !visited[j] && graph[i][j]) {
-                cout << i << " - " << j << endl;
+                cout << i << " -> " << j << endl;
             }
         }
     }
@@ -135,14 +144,15 @@ int main() {
     graph[0][3] = 13 - 1.25;
     graph[4][1] = 20 + 1.25;
     graph[5][1] = 4  + 1.25;
-
-    // for (int i = 0; i < V; i++) {
-    //   for (int j = 0; j < V; j++) {
-    //     printf("%5.2f ", graph[i][j]);
-    //   }
-    //   printf("\n");
-    // }
-    // printf("\n");
+    
+    printf("Graph:\n");
+    for (int i = 0; i < V; i++) {
+      for (int j = 0; j < V; j++) {
+        printf("%5.2f ", graph[i][j]);
+      }
+      printf("\n");
+    }
+    printf("\n");
 
     /* graph I used in this toy test, source node is 0, and sink node is 1
     double graph[V][V] = {{0, 0,  16, 13, 0,  0},

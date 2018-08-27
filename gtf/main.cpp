@@ -19,19 +19,39 @@
 
 using namespace std;
 
-void graph_tv(double *node_values,  // value of nodes
+void graph_tv(
+        double *flow_from_source,  // value of nodes
+        double *flow_to_sink,  // value of nodes
+        
         int num_nodes,    // number of nodes
         int num_edges,    // number of edges
         int* edge_src,
         int* edge_trg,
         double lambda,
-        float error) {
-    
+        float error,
+        
+        int* assignments
+    ) {
+
+    // Graph::node_id nodes[2];
+    // Graph *g = new Graph();
+
+    // nodes[0] = g -> add_node();
+    // nodes[1] = g -> add_node();
+    // g -> set_tweights(nodes[0], 1, 5);
+    // g -> set_tweights(nodes[1], 2, 6);
+    // g -> add_edge(nodes[0], nodes[1], 3, 4);
+
+    // Graph::flowtype flow = g -> maxflow();
+
+    // printf("Flow = %f\n", flow);
+
+        
     double dval, dr, drd;
 
     dr = lambda;
 
-    Graph::node_id * nodes, no;
+    Graph::node_id* nodes, no;
 
     if (num_nodes <= 2 || num_edges <= 2) {
         fprintf(stderr,"error: bad size\n");
@@ -44,20 +64,24 @@ void graph_tv(double *node_values,  // value of nodes
     // Initialize nodes
     for (int i = 0; i < num_nodes; i++) {
         no = nodes[i] = G->add_node();
-        G->set_tweights(no, node_values[i], 0.);
+        G->set_tweights(no, flow_from_source[i], flow_to_sink[i]);
     }
+    printf("node flow: %f\n", G->flow);
     
     // Initialize edges
     for (int i = 0; i < num_edges; i++) {
-        G->add_edge(nodes[edge_src[i]], nodes[edge_trg[i]], dr, dr);
+        G->add_edge(nodes[edge_src[i]], nodes[edge_trg[i]], dr, 0.0);
     }
+    printf("edge flow: %f\n", G->flow);
     
-    // Run dyadicparametricTV
-    G->dyadicparametricTV(error);
+    // // Run dyadicparametricTV
+    // // G->dyadicparametricTV(error);
+    double x = G->maxflow();
+    cout << "flow=" << x << endl;
     
     // Export values
     for (int i = 0; i < num_nodes; i++) {
-        node_values[i] = G->what_value(nodes[i]);
+        assignments[i] = G->what_segment(nodes[i]);
     }
     
     delete G;
@@ -66,10 +90,12 @@ void graph_tv(double *node_values,  // value of nodes
 
 int main(){
 
-    double lambda = 3;
-    int edge_src[] = {0, 0, 1, 1, 2, 3};
-    int edge_trg[] = {1, 2, 0, 3, 1, 2};
-    
+    double lambda             = 3;                    // default edge weight
+    int edge_src[]            = {0, 0, 1, 1, 2, 3};   // edgelist
+    int edge_trg[]            = {1, 2, 0, 3, 1, 2};   // ^^
+    double flow_from_source[] = {16, 13, 0, 0};       // edge weight from source to node
+    double flow_to_sink[]     = {0, 0, 20, 4};        // edge weight from node to sink
+
     // Compute number of edges
     int num_edges = sizeof(edge_src) / sizeof(edge_src[0]);
     
@@ -89,17 +115,17 @@ int main(){
     cout << "num_edges: " << num_edges << endl;
 
     // Initial node values
-    double *node_values = new double[num_nodes];
-    node_values[0] = 16;
-    node_values[1] = 13;
-    node_values[2] = -20;
-    node_values[3] = -4;
+    
+    int *assignments = new int[num_nodes];
+    graph_tv(flow_from_source, flow_to_sink, num_nodes, num_edges, edge_src, edge_trg, lambda, 0.0, assignments);
 
-    graph_tv(node_values, num_nodes, num_edges, edge_src, edge_trg, lambda, 0.0);
-
-    cout << endl << "Results:" << endl;
-    for(int i = 0; i < num_nodes; i++){
-        cout << node_values[i] << endl;
+    cout << endl << "MinCut:" << endl;
+    for(int i = 0; i < num_edges; i++){
+        int src_partition = assignments[edge_src[i]];
+        int trg_partition = assignments[edge_trg[i]];
+        if((src_partition == Graph::SOURCE) && (trg_partition == Graph::SINK)) {
+            cout << edge_src[i] << " -> " << edge_trg[i] << endl;
+        }
     }
     
     return 0;
