@@ -76,8 +76,8 @@ void graph_tv(
     // G->dyadicparametricTV(error);
     
     // Run maxflow
-    double x = G->maxflow();
-    cout << "flow=" << x << endl;
+    double maxflow = G->maxflow();
+    cout << "maxflow=" << maxflow << endl;
     
     // Export values
     for (int i = 0; i < num_nodes; i++) {
