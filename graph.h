@@ -1,76 +1,3 @@
-/* graph.h */
-/*
-	This software library implements the maxflow algorithm
-	described in
-
-		An Experimental Comparison of Min-Cut/Max-Flow Algorithms
-		for Energy Minimization in Vision.
-		Yuri Boykov and Vladimir Kolmogorov.
-		In IEEE Transactions on Pattern Analysis and Machine Intelligence (PAMI), 
-		September 2004
-
-	This algorithm was developed by Yuri Boykov and Vladimir Kolmogorov
-	at Siemens Corporate Research. To make it available for public use,
-	it was later reimplemented by Vladimir Kolmogorov based on open publications.
-
-	If you use this software for research purposes, you should cite
-	the aforementioned paper in any resulting publication.
-*/
-	
-/*	
-	Copyright 2001 Vladimir Kolmogorov (vnk@cs.cornell.edu), Yuri Boykov (yuri@csd.uwo.ca).
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
-
-
-/*
-	For description, example usage, discussion of graph representation
-	and memory usage see README.TXT in the original distribution
-	maxflow-v2.2 available at
-	http://www.adastral.ucl.ac.uk/~vladkolm/software.html
-*/
-
-/*
-   this is a slightly modified version by A. Chambolle and J. Darbon of
-   the original maxflow-v2.2.src/adjacency_list/graph.h in maxflow-v2.2,
-   in order to implement the TV minimization described first in:
-
-   D. S. Hochbaum: An efficient algorithm for image segmentation,
-   Markov random fields and related problems. J. ACM, 48(4):686--701,
-   2001.
-
-   see also
-   A. Chambolle and J. Darbon: On total variation minimization and
-   surface evolution using parametric maximum flows, preprint (2008)
-
-   Changes in this file (w.r. original) are as follows:
-
-   captype and flowtype have been set to 'double'
-   a new variable 'unsigned short label;' has been added together with
-   the function for retrieveing the value
-   'double what_value(node_id i);'
-   a new function, computing a TV-minimization by D. Hochbaum's 
-   dyadic-parametric approach is added
-   'void dyadicparametricTV(float);' where float is the error
-   see graphtv.cpp for the corresponding code
- */
-/* compilation :
-   cc -L. -O -o tvle TVlambda-exact.c images.c -lm -lnetpbm -lTVE -lstdc++
- */
-
 #ifndef __GRAPH_H__
 #define __GRAPH_H__
 
@@ -204,15 +131,6 @@ private:
 	int					TIME;								/* monotonically increasing global counter */
 
 /***********************************************************************/
-
-	/* functions for processing active list */
-	void set_active(node *i);
-	node *next_active();
-
-	void maxflow_init();
-	void augment(arc *middle_arc);
-	void process_source_orphan(node *i);
-	void process_sink_orphan(node *i);
 };
 
 #endif

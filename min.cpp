@@ -7,16 +7,16 @@
 #include <map>
 #include <set>
 #include <sstream>
-#include "graph.h"
+#include <queue>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <limits.h>
-#include "graph.h"
 #include <time.h>
-#include <queue>
+
+#include "graph.h"
 
 using namespace std;
 typedef double captype;
@@ -42,7 +42,7 @@ template <class InputIterator, class OutputIterator, class UnaryPredicate>
 
 void read_nodes(const string& from, const string& to, vector<string>& nodes_fil, vector<string>& diffs_fil){
 
-  ifstream ip("../_data/taxi-small/sunday-nodes.tsv");
+  ifstream ip("_data/sunday-nodes.tsv");
 
   if(!ip.is_open()) std::cout << "ERROR: File Open" << '\n';
   string node;
@@ -89,7 +89,7 @@ void read_nodes(const string& from, const string& to, vector<string>& nodes_fil,
 
 int read_edges(const vector<string>& nodes, vector<int>& srcs_fil_no_dup, vector<int>& trgs_fil_no_dup){
 
-  ifstream ip("../_data/taxi-small/sunday-edges.tsv");
+  ifstream ip("_data/sunday-edges.tsv");
 
   if(!ip.is_open()) std::cout << "ERROR: File Open" << '\n';
   string src;
@@ -185,13 +185,12 @@ int bfs(double** rGraph, int s, int t, int parent[], const int V) {
                 q.push(v);
                 parent[v] = u;
                 visited[v] = true;
+                // if(v == t) return true;
             }
         }
     }
-
-    // If we reached sink in BFS starting from source, then return
-    // true, else false
-    return (visited[t] == true);
+    
+    return visited[t];
 }
 
 // A DFS based function to find all reachable vertices from s.  The function
@@ -206,26 +205,72 @@ void dfs(double** rGraph, int s, bool visited[], const int V) {
 
 // Prints the minimum s-t cut
 double** minCut(double** graph, int s, int t, bool *visited, const int V) {
+    printf("minCut\n");
     int u, v;
     double max_flow = 0;
     // Create a residual graph and fill the residual graph with
     // given capacities in the original graph as residual capacities
     // in residual graph
+    int num_edges = 0;
     double** rGraph = new double*[V];  // rGraph[i][j] indicates residual capacity of edge i-j
     for (u = 0; u < V; u++) {
         rGraph[u] = new double[V];
         for (v = 0; v < V; v++) {
-             rGraph[u][v] = graph[u][v];
+          rGraph[u][v] = graph[u][v];
+          if(graph[u][v] != 0) {
+            num_edges += 1;
+          }
         }
     }
+    
+    cerr << "num_edges: " << num_edges << endl;
+    int *csr_offsets   = new int[V + 1];
+    int *csr_indices   = new int[num_edges];
+    double *csr_values = new double[num_edges];
 
+    memset(csr_offsets, -1, (V + 1) * sizeof(csr_offsets[0]));
+    memset(csr_indices, -1, (num_edges) * sizeof(csr_indices[0]));
+    memset(csr_values, -1, (num_edges) * sizeof(csr_values[0]));
+
+    int idx = 0;
+    csr_offsets[0] = 0;
+    for (u = 0; u < V; u++) {
+      int idx_ = 0;
+      for (v = 0; v < V; v++) {
+        double val = rGraph[u][v];
+        if(val != 0) {
+          csr_indices[idx] = v;
+          csr_values[idx]  = val;
+          idx += 1;
+          idx_ += 1;
+        }
+      }
+      csr_offsets[u + 1] = csr_offsets[u] + idx_;
+    }
+    
+    cerr << "idx: " << idx << endl;
+    for(int u = 0; u < V + 1; ++u) {
+      cout << csr_offsets[u] << " ";
+    }
+    cout << endl;
+    for(int u = 0; u < num_edges; ++u) {
+      cout << csr_indices[u] << " ";
+    }
+    cout << endl;
+    for(int u = 0; u < num_edges; ++u) {
+      cout << csr_values[u] << " ";
+    }
+    
 
     int *parent = new int[V];  // This array is filled by BFS and to store path
 
     // Augment the flow while there is a path from source to sink
     int counter = 0;
     while (bfs(rGraph, s, t, parent, V)) {
-
+        cerr << ".";
+        if((counter > 0) & (counter % 64 == 0)) {
+          cerr << "\n";
+        }
         // Find minimum residual capacity of the edges along the
         // path filled by BFS. Or we can say find the maximum flow
         // through the path found.
@@ -261,7 +306,14 @@ double** minCut(double** graph, int s, int t, bool *visited, const int V) {
     // Flow is maximum now, find vertices reachable from s
     memset(visited, false, V*sizeof(visited[0]));
     dfs(rGraph, s, visited, V);
-    //for (int i = 0; i < V; i++) printf("visited: %d \n", visited[i]);
+    
+    cout << "visited:" << endl;
+    for (int i = 0; i < V; i++) {
+      if(visited[i]) {
+        cout << i << " ";
+      }
+    }
+    cout << endl;
 
     // Print all edges that are from a reachable vertex to
     // non-reachable vertex in the original graph
@@ -303,10 +355,21 @@ void graph_tv(double *Y,// value of nodes
         graph[h][w] = 0;
     }
 
+    // Set edge lambdas to 6
     for (int i = 0; i < m; i++) {
       graph[e1[i]+2][e2[i]+2] = lambda1;
       graph[e2[i]+2][e1[i]+2] = lambda1;
     }
+
+    // for (int i = 0; i < V; i++) {
+    //   for (int j = 0; j < V; j++) {
+    //     double val = graph[i][j];
+    //     if(val != 0) {
+    //       printf("%d %d %.17g\n", i, j, val); 
+    //     }
+    //   }
+    // }
+    // // return;
 
     // normalization as did in parametric maxflow
     #define Alloc_Size 1024
@@ -369,7 +432,7 @@ void graph_tv(double *Y,// value of nodes
       */
       bool *visited = new bool[V];
       graph = minCut(graph, 0, 1, visited, V);
-
+      return;
       /*
       printf("\n residual graph after min-cut: \n");
       for (int u = 0; u < V; u++) {
@@ -494,28 +557,31 @@ void graph_tv(double *Y,// value of nodes
 
 }
 
-void soft_thresh(double *Y, const double thresh, const int n){
-    for(int i = 0; i < n; i++){
-        double tmp = max(Y[i] - thresh, 0.0);
-        Y[i] = tmp + min(Y[i]+thresh, 0.0);
-    }
-}
-
 
 int main(){
+    // --
+    // Params
+    
     string start_time = "2011-06-26 12:00:00";
-    string end_time = "2011-06-26 14:00:00";
-    double lambda1 = 6;
-    double lambda2 = 3;
+    string end_time   = "2011-06-26 12:05:00";
+    double lambda1    = 6;
+    double lambda2    = 3;
+    
+    // -- 
+    // IO
+
+    cout << "load_graph: start" << endl;
     vector<string> nodes_fil, diffs_fil;
     read_nodes(start_time, end_time, nodes_fil, diffs_fil);
-
+    
     int n = nodes_fil.size();
     vector<int> srcs_fil_no_dup, trgs_fil_no_dup;
     int m = read_edges(nodes_fil, srcs_fil_no_dup, trgs_fil_no_dup);
 
     double *Y = new double[n]; // nodes filled
-    for(int i = 0; i < n; i++) Y[i] = stod(diffs_fil[i]);
+    for(int i = 0; i < n; i++) {
+      Y[i] = stod(diffs_fil[i]);
+    }
 
     int *edges1, *edges2;
     edges1 = new int[m];
@@ -526,24 +592,34 @@ int main(){
       edges2[i] = trgs_fil_no_dup[i];
     }
 
-    cout << "Done! "<< "# of nodes: " << n << "; # of edges: " << m << endl;
-    for(int i = 0; i < 30; i++){
-      cout << Y[i] << ' ' << edges1[i] << ' ' << edges2[i] << endl;
-    }
-
-    clock_t t1, t2;
-    t1 = clock();
+    cout << "load_graph: done" << endl;
+    cout << "\t# of nodes: " << n << endl;
+    cout << "\t# of edges: " << m << endl;
+    
+    // --
+    // Run
+    
+    cout << "---------------" << endl;
+    cout << "graph_tv: start" << endl;
 	  graph_tv(Y, n, m, edges1, edges2, lambda1, 0.0);
-    soft_thresh(Y, lambda2, n);
-    t2 = clock();
-    cout << "time is " << ((float)t2 - (float)t1) / CLOCKS_PER_SEC << endl;
-    for(int i = 0;  i < 30; i++){
-        printf("result is %f. \n", Y[i]);
-    }
-    ofstream out( "../output_min.txt" );
-    //out.precision(3);
+
     for(int i = 0; i < n; i++){
-        out << Y[i] << endl;
+        Y[i] = max(Y[i] - lambda2, 0.0) + min(Y[i] + lambda2, 0.0); // ??
     }
+    
+    cout << "graph_tv: done" << endl;
+    
+    // --
+    // Save results
+
+    for(int i = 0;  i < 10; i++){
+        printf("Y[%d]=%.17g\n", i, Y[i]);
+    }
+    
+    ofstream out( "_results/output_min.min.txt" );
+    for(int i = 0; i < n; i++){
+        out << i << " " << Y[i] << endl;
+    }
+    
     return 0;
 }
